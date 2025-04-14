@@ -1,0 +1,39 @@
+/**/
+
+parse arg argv
+
+lib = addlib('rexxarplib.library',0,-30,0)
+lib = addlib('rexxsupport.library',0,-30,0)
+
+if (~showlist('p', 'EMACS1'))
+then do
+  ADDRESS COMMAND "Execute s:Emacs"
+  do j=1 to 10 while ~showlist('p','EMACS1') /* wait for the port */
+    ADDRESS COMMAND 'Wait 5'
+  end
+
+  if (~showlist('p', 'EMACS1')) then do
+    say "Couldn't launch Emacs"
+    exit 1
+  end
+end
+
+
+do while argv ~= ""
+  parse var argv file argv
+  dir = pragma('DIRECTORY')
+
+  if (exists(dir || '/' || file)) then filename = dir || '/' || file
+  else if (exists(file)) then filename = file
+  else filename = dir || file
+
+  lisp = '
+                  (progn
+                    (split-window-vertically)
+                    (find-file-other-window "' || filename || '")
+                  )
+         '
+  ADDRESS EMACS1 lisp
+  ADDRESS COMMAND 'Bin:PSX TOFRONT EMACS'
+end
+
